@@ -18,13 +18,16 @@
 package org.apache.flink.examples;
 
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.core.fs.FSDataInputStream;
+import org.apache.flink.core.fs.FileSystem;
+import org.apache.flink.core.fs.Path;
 import org.apache.flink.table.api.TableEnvironment;
-import org.apache.flink.util.FileUtils;
 
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -52,7 +55,7 @@ public class SqlRunner {
         if (args.length != 1) {
             throw new Exception("Exactly one argument is expected.");
         }
-        var script = FileUtils.readFileUtf8(new File(args[0]));
+        var script = readFileUft8(args[0]);
         var statements = parseStatements(script);
 
         var tableEnv = TableEnvironment.create(new Configuration());
@@ -69,6 +72,14 @@ public class SqlRunner {
                 LOG.info("Executing:\n{}", statement);
                 tableEnv.executeSql(statement);
             }
+        }
+    }
+
+    private static String readFileUft8(String filePath) throws Exception {
+        Path path = new Path(filePath);
+        FileSystem fs = path.getFileSystem();
+        try (FSDataInputStream inputStream = fs.open(path)) {
+            return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
         }
     }
 
